@@ -17,7 +17,7 @@ FILE * getInputFromUser() {
     if((fp=fopen(fname,"r")) == NULL)
 	{
 		printf("File doesn't exist..\n");
-        return 0;
+        exit(0);
 	}
     else
     {
