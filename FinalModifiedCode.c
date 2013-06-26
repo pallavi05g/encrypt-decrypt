@@ -1,5 +1,3 @@
-//Final Modified Code
-
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
@@ -42,25 +40,32 @@ int detectFileOperation(FILE *fp) {
     else return FALSE;
 }
 
+void create_dynamic_filename(char ext[]) //to create a filename dynamically
+{
+    int i,j;
+    
+    for(i=0;fname[i]!='.';i++); //traversal till '.' is reached
+    
+    for(j=0;ext[j]!='\0';++j,++i)
+    {
+        fname[i] = ext[j];
+    }
+    fname[i] = '\0';
+    
+ 
+}
 void encryptFileAndWriteToFile(FILE *fp) {
     
     size_t size, read_data = 0;
     const size_t block = 1024;
-    int esize,i,j;
-    char en_ext[] = "-en.txt";
+    int esize,i;
     unsigned char *data_to_encrypt, *encrypted_data;
+    char en_ext[] = "-en.txt";
     
-    //to create a filename dynamically
+    create_dynamic_filename(en_ext);     //calls create dyn filename func.
     
-    for(i=0;fname[i]!='.';i++);
-    for(j=0;en_ext[j]!='\0';++j,++i)
-        {
-            fname[i] = en_ext[j];
-        }
-        fname[i] = '\0';
-    
-    //open the file created
-    printf("File %s created to store encrypted data\n",fname);
+    printf("File %s created to store encrypted data\n",fname);     
+
     FILE *encryptedFile = fopen(fname,"w+");
     if(encryptedFile == NULL)
     {
@@ -95,15 +100,12 @@ void encryptFileAndWriteToFile(FILE *fp) {
 void decryptFileAndWriteToFile(FILE *fp) {
     size_t size, read_data = 0;
     const size_t block = 1024;
-    int i,dsize, ch,j;
+    int i,dsize;
     char *decrypted_data, *data_to_decrypt = malloc(block);
     char dec_ext[] = "-dec.txt";
-    for(i=0;fname[i]!='.';i++);
-    for(j=0;dec_ext[j]!='\0';++j,++i)
-    {
-        fname[i] = dec_ext[j];
-    }
-    fname[i] = '\0';
+    
+    create_dynamic_filename(dec_ext); //calls create dyn filename func.
+
     FILE *decryptedFile = fopen(fname,"w+");
     if(decryptedFile == NULL)
     {
