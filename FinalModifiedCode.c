@@ -1,6 +1,5 @@
 //Dynamic buffer allocation
-//But buffer length depends on filesize
-
+//Small issue with the first char
 
 #include<stdio.h>
 #include<stdlib.h>
@@ -12,6 +11,7 @@
 #define TRUE 1
 #define FALSE 0
 #define ERROR 2
+#define LEN 1024
 
 char fname[256];
 
@@ -85,30 +85,29 @@ void encryptFileAndWriteToFile(FILE *fp) {
     {
         perror("Writing encrypted file\n");
     }
+    data_to_encrypt = malloc(LEN);
+    encrypted_data = malloc(LEN);//dynamic allocation for encrypted buffer
+    fputc('E',encryptedFile);
+    //int loc = ftell(encryptedFile);
+    //printf("%d is the location\n",loc);
     
-    fsize = calc_file_size(fp);
-    
-    data_to_encrypt = malloc(fsize);
-    while(fgetc(fp)!=EOF)
-    {
-   	 size = fread(data_to_encrypt,1,fsize,fp);
-    }   
-     if(size==0)
-    {
-        perror("No data\n");
-    }
-    encrypted_data = malloc(size);//dynamic allocation for encrypted buffer
-    encrypted_data[0] = 'E';
-    
-    for(i=0;i<size;i++)
-    {	
-        encrypted_data[i+1] = (int)data_to_encrypt[i]+5; //encryption
-    }
-    esize = strlen(encrypted_data);
-    fwrite(encrypted_data,1,esize,encryptedFile); //writing encrypted data to a file
-    printf("Size of the encrypted data is %d\n",esize); //for debugging purposes
-   // printf("\nEncrypted data is: %s\n",encrypted_data); //printing encrypted data as is
-    
+    fseek(encryptedFile,1,0);
+    int currentPoint,count = 0;
+    do {
+        size = fread(data_to_encrypt,1,LEN,fp);
+        for(i = 0; i<size; i++)
+        {
+            encrypted_data[i] = (int)data_to_encrypt[i]+5;
+  
+        }
+        // esize = strlen(encrypted_data);
+        fwrite(encrypted_data,1,size,encryptedFile); //writing encrypted data to a file
+        ++count;
+
+    } while (size>0);
+    currentPoint = ftell(fp);
+
+    printf("Size of encrypted data is %d and count is %d\n",currentPoint,count);
     free(data_to_encrypt);
     free(encrypted_data);
     fclose(encryptedFile);
@@ -117,7 +116,7 @@ void encryptFileAndWriteToFile(FILE *fp) {
 
 void decryptFileAndWriteToFile(FILE *fp) {
     size_t size;
-    int i,dsize,fsize;
+    int i,dsize,fsize,count = 0 ;
     char *decrypted_data,*data_to_decrypt;
     char dec_ext[] = "-dec.txt";
     
@@ -128,24 +127,22 @@ void decryptFileAndWriteToFile(FILE *fp) {
     {
         perror("Writing decrypted file\n");
     }
-    fsize = calc_file_size(fp);
-    data_to_decrypt = malloc(fsize);
-    
-    size = fread(data_to_decrypt,1,fsize,fp);
-    if(size==0)
-    {
-        perror("No data\n");
-    }
-    decrypted_data = malloc(size);//dynamic allocation for encrypted buffer
-    for(i=0;i<size-1;i++)
-    {
-        decrypted_data[i] = (int)data_to_decrypt[i+1]-5;//decryption
-    }
-    
-  //  printf("\nDecrypted data is: %s\n",decrypted_data); //printing decrypted data as is
-    dsize = strlen(decrypted_data);
-    fwrite(decrypted_data,1,dsize,decryptedFile); //writing decrypted data to a file
-    printf("Size of the decrypted data is %d\n",dsize-1); //for debugging purposes
+    data_to_decrypt = malloc(LEN);
+    decrypted_data = malloc(LEN);//dynamic allocation for encrypted buffer
+
+    do {
+        size = fread(data_to_decrypt,1,LEN,fp);
+        for(i = 0;i<size;i++)
+        {
+            decrypted_data[i] = (int)data_to_decrypt[i]-5;//decryption
+        }
+        fwrite(decrypted_data,1,size,decryptedFile); //writing decrypted data to a
+        ++count;
+
+    } while (size>0);
+    int currentPoint = ftell(fp);
+        
+    printf("Size of the decrypted data is %d and count is %d\n",currentPoint,count); //for debugging purposes
     
     free(data_to_decrypt);
     free(decrypted_data);
