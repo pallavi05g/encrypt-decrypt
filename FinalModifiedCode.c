@@ -21,10 +21,10 @@ FILE * getInputFromUser() {
     scanf("%s",fname);
     FILE *fp;
     if((fp=fopen(fname,"r")) == NULL)
-	{
-		printf("File doesn't exist..\n");
+    {
+	printf("File doesn't exist..\n");
         return NULL;
-	}
+    }
     else
     {
         printf("File found\n");
@@ -36,12 +36,20 @@ FILE * getInputFromUser() {
 int detectFileOperation(FILE *fp) {
     
     if(fp == NULL)
-        return ERROR;
+    {
+    	return ERROR;
+    }
     int encryptFlag = fgetc(fp);
     fseek(fp,0,0);
     if(encryptFlag == 'E')
-        return TRUE;
-    else return FALSE;
+    {
+    	return TRUE;
+    }
+    else 
+    {
+    	return FALSE;
+    }
+   
 }
 
 void create_dynamic_filename(char ext[]) //to create a filename dynamically
@@ -158,18 +166,17 @@ int main(int argc, const char * argv[])
 	fp = getInputFromUser();
     encryptFlag = detectFileOperation(fp);
     
-	if (encryptFlag == TRUE)
+    if (encryptFlag == TRUE)
     {
 		decryptFileAndWriteToFile(fp);
-	}
+    }
     else if(encryptFlag == FALSE)
     {
         encryptFileAndWriteToFile(fp);
     }
-    else
+    else if(encryptFlag == ERROR)
     {
-        return 1;
-        
+        return 1;    
     }
     return 0;
 }
