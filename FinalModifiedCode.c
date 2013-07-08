@@ -140,7 +140,9 @@ void decryptFileAndWriteToFile(FILE *fp) {
     
     do {
         size = fread(data_to_decrypt,1,LEN,fp);
-        for(i = 1;i<size;i++)
+        for(i = 0;i<size;i++) //When I made this begin from 0, an additional @ was appearing coz of the way you exit from vim i.e. :
+           // Testing this resulted in the same file content but diff command showed otherwise. I couldn't understand why. It said binary files differ
+            
         {
             decrypted_data[i] = (int)data_to_decrypt[i]-5;//decryption
         }
