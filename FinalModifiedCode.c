@@ -1,3 +1,6 @@
+//Dynamic buffer allocation
+//Alignments fixed, variable names modified
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
@@ -8,121 +11,149 @@
 #define TRUE 1
 #define FALSE 0
 #define ERROR 2
+#define LEN 1024
 
 char fname[256];
 
 FILE * getInputFromUser() {
-        
+    
     printf("Enter file name:\n");
     scanf("%s",fname);
     FILE *fp;
     if((fp=fopen(fname,"r")) == NULL)
-	{
-		printf("File doesn't exist..\n");
+    {
+	printf("File doesn't exist..\n");
         return NULL;
-	}
+    }
     else
     {
         printf("File found\n");
         return fp;
-
+        
     }
 }
 
 int detectFileOperation(FILE *fp) {
-
+    
     if(fp == NULL)
-        return ERROR;
+    {
+    	return ERROR;
+    }
     int encryptFlag = fgetc(fp);
-    fseek(fp,0,0);
+    fseek(fp,0,0); //if I remove this line, the first char is lost because prev line moves the file pointer to the next character
     if(encryptFlag == 'E')
+    {
         return TRUE;
-    else return FALSE;
+    }
+    else
+    {
+        return FALSE;
+    }
+
+}
+
+void createDynamicFileName(char ext[]) //to create a filename dynamically
+{
+    int i,j;
+    
+    for(i=0;fname[i]!='.';i++); //traversal till '.' is reached
+    
+    for(j=0;ext[j]!='\0';++j,++i)
+    {
+        fname[i] = ext[j];
+    }
+    fname[i] = '\0';
+    
+    
+}
+
+int calcFileSize(FILE *fp)
+{
+    int fsize;
+    fseek(fp,0,2);
+    fsize = ftell(fp);
+    //printf("Size of the file is %d",fsize);
+    fseek(fp,0,0);
+    return fsize;
 }
 
 void encryptFileAndWriteToFile(FILE *fp) {
     
-    size_t size, read_data = 0;
-    const size_t block = 1024;
-    int esize,i,j;
-    char en_ext[] = "-en.txt";
+    size_t size;
+    int esize,i,fsize;
     unsigned char *data_to_encrypt, *encrypted_data;
+    char encExtension[] = "-en.txt";
     
-    //to create a filename dynamically
+    createDynamicFileName(encExtension);     //calls create dyn filename func.
     
-    for(i=0;fname[i]!='.';i++);
-    for(j=0;en_ext[j]!='\0';++j,++i)
-        {
-            fname[i] = en_ext[j];
-        }
-        fname[i] = '\0';
-    
-    //open the file created
     printf("File %s created to store encrypted data\n",fname);
+    
     FILE *encryptedFile = fopen(fname,"w+");
     if(encryptedFile == NULL)
     {
-        perror("Writing encrypted file\n");
+        perror("Couldn't open the file\n");
     }
+    data_to_encrypt = malloc(LEN);
+    encrypted_data = malloc(LEN);//dynamic allocation for encrypted buffer
+    fputc('E',encryptedFile);
+    //int loc = ftell(encryptedFile);
+    //printf("%d is the location\n",loc);
     
-    data_to_encrypt = malloc(block);
+    fseek(encryptedFile,1,0);
+    int currentPoint,count = 0;
+    do {
+        size = fread(data_to_encrypt,1,LEN,fp);
+        for(i = 0; i<size; i++)
+        {
+            encrypted_data[i] = (int)data_to_encrypt[i]+5;
+            
+        }
+        // esize = strlen(encrypted_data);
+        fwrite(encrypted_data,1,size,encryptedFile); //writing encrypted data to a file
+        ++count;
+        
+    } while (size>0);
+    currentPoint = ftell(fp);
     
-    while((size = fread(data_to_encrypt + read_data,1,block,fp))>0)
-    {
-        read_data+=size;
-
-    encrypted_data = malloc(read_data+block);//dynamic allocation for encrypted buffer
-    encrypted_data[0] = 'E';
-
-    for(i=0;i<read_data;i++)
-    {
-            encrypted_data[i+1] = (int)data_to_encrypt[i]+5; //encryption
-    }
-    }
-    esize = strlen(encrypted_data);
-    fwrite(encrypted_data,1,esize,encryptedFile); //writing encrypted data to a file
-    printf("Size of the encrypted data is %d\n",esize); //for debugging purposes
-    printf("\nEncrypted data is: %s\n",encrypted_data); //printing encrypted data as is
-
+    printf("Size of encrypted data is %d and count is %d\n",currentPoint,count);
     free(data_to_encrypt);
     free(encrypted_data);
     fclose(encryptedFile);
-
+    
 }
 
 void decryptFileAndWriteToFile(FILE *fp) {
-    size_t size, read_data = 0;
-    const size_t block = 1024;
-    int i,dsize, ch,j;
-    char *decrypted_data, *data_to_decrypt = malloc(block);
-    char dec_ext[] = "-dec.txt";
-    for(i=0;fname[i]!='.';i++);
-    for(j=0;dec_ext[j]!='\0';++j,++i)
-    {
-        fname[i] = dec_ext[j];
-    }
-    fname[i] = '\0';
+    size_t size;
+    int i,dsize,fsize,count = 0 ;
+    char *decrypted_data,*data_to_decrypt;
+    char decExtension[] = "-dec.txt";
+    
+    createDynamicFileName(decExtension); //calls create dyn filename func.
+    
     FILE *decryptedFile = fopen(fname,"w+");
     if(decryptedFile == NULL)
     {
         perror("Writing decrypted file\n");
     }
-    while((size = fread(data_to_decrypt + read_data,1,block,fp))>0)
-    {
-        read_data+=size;
-
-    decrypted_data = malloc(read_data+block); //dynamic allocation for decrypted buffer
-    for(i=0;i<read_data-1;i++)
-    {
-        decrypted_data[i] = (int)data_to_decrypt[i+1]-5;//decryption
-    }
-    }
+    data_to_decrypt = malloc(LEN);
+    decrypted_data = malloc(LEN);//dynamic allocation for encrypted buffer
     
-    printf("\nDecrypted data is: %s\n",decrypted_data); //printing encrypted data as is
-    dsize = strlen(decrypted_data);
-    fwrite(decrypted_data,1,dsize,decryptedFile); //writing decrypted data to a file
-    printf("Size of the decrypted data is %d\n",dsize-1); //for debugging purposes
-
+    do {
+        size = fread(data_to_decrypt,1,LEN,fp);
+        for(i = 0;i<size;i++) //When I made this begin from 0, an additional @ was appearing coz of the way you exit from vim i.e. :
+           // Testing this resulted in the same file content but diff command showed otherwise. I couldn't understand why. It said binary files differ
+            
+        {
+            decrypted_data[i] = (int)data_to_decrypt[i]-5;//decryption
+        }
+        fwrite(decrypted_data,1,size,decryptedFile); //writing decrypted data to a
+        ++count;
+        
+    } while (size>0);
+    int currentPoint = ftell(fp);
+    
+    printf("Size of the decrypted data is %d and count is %d\n",currentPoint,count); //for debugging purposes
+    
     free(data_to_decrypt);
     free(decrypted_data);
     fclose(decryptedFile);
@@ -136,19 +167,18 @@ int main(int argc, const char * argv[])
     char ch;
 	fp = getInputFromUser();
     encryptFlag = detectFileOperation(fp);
-
-	if (encryptFlag == TRUE)
+    
+    if (encryptFlag == TRUE)
     {
 		decryptFileAndWriteToFile(fp);
-	}
+    }
     else if(encryptFlag == FALSE)
     {
-            encryptFileAndWriteToFile(fp);
+        encryptFileAndWriteToFile(fp);
     }
-    else
+    else if(encryptFlag == ERROR)
     {
-        return 1;
-     
+        return 1;    
     }
     return 0;
 }
